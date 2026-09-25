@@ -1,0 +1,137 @@
+import operator
+from typing import Annotated, TypedDict, List
+from langchain_community.tools import WikipediaQueryRun
+from langchain_community.utilities import WikipediaAPIWrapper
+from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage, AIMessage
+from langchain_ollama import ChatOllama
+from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import MemorySaver
+
+model = "qwen2.5:0.5b"
+# 1. Setup the Local LLM
+# We point to the model we just pulled in the terminal
+llm = ChatOllama(model=model, temperature=0)
+
+# Setup the Tool (Wikipedia is free!)
+wiki = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
+
+# 2. Define the State
+class AgentState(TypedDict):
+    messages: Annotated[List[BaseMessage], operator.add]
+
+# 3. Define the Nodes
+
+def call_model(state):
+    """The Brain: Decides what to do next."""
+    messages = state["messages"]
+
+    # We give it a system prompt to behave like a tool-using agent
+    # Local models sometimes need stronger instructions to stick to a format
+    system_prompt = SystemMessage(content="""
+    You are helpful reseach assistant.
+    Step 1: If you need more information to answer the user, output exactly: 'SEARCH: <your query>'
+    Step 2: If you have the answer, just write the answer directly.
+    Do not add extra conversation filler like "I will search for that".
+    """)
+
+    # Ensure system prompt is always first
+    if not isinstance(messages[0], SystemMessage):
+        messages = [system_prompt] + messages
+    
+    response = llm.invoke(messages)
+    return {"messages": [response]}
+
+def run_tool(state):
+    """The Hands: Executes the tool."""
+    last_message = state["messages"][-1]
+    content = last_message.content
+
+    # Simple string parsing to find the command
+    if "SEARCH:" in content:
+        query = content.split("SEARCH:")[-1].strip()
+        print(f"🔎 Local Agent is searching Wikipedia for: {query}")
+        try :
+            result = wiki.run(query)
+        except Exception as e:
+            result = "Error searching Wikipedia"
+
+        return{"messages": [HumanMessage(content = f"TOOL RESULT: {result}")]}
+    return{"messages": [HumanMessage(content = "No tool needed.")]}
+    
+def router_logic(state):
+    """The Logic: Decide if we loop or end."""
+    last_message = state["messages"][-1]
+
+    # If the bot output 'SEARCH:', we go to the tool node
+    if "SEARCH:" in last_message.content:
+        return "continue"
+    return "end"
+
+# SETUP MEMORY
+memory = MemorySaver()
+
+# 4. Build the Graph (Same as before!)
+workflow = StateGraph(AgentState)
+
+workflow.add_node("agent", call_model)
+workflow.add_node("tool", run_tool)
+
+workflow.set_entry_point("agent")
+workflow.add_conditional_edges(
+    "agent",
+    router_logic,
+    {
+        "continue": "tool", 
+        "end": END
+    }
+)
+
+workflow.add_edge("tool", "agent")
+
+# We pass the checkpointer to the compile function
+app = workflow.compile(checkpointer=memory)
+
+
+
+# With app.invoke(): You hit Enter. The cursor blinks... and blinks... and blinks for 30 seconds. You start wondering, "Did it crash? Is my code broken?"
+
+# With app.stream(): You hit Enter. Immediately you see: Finished Node: agent (It made a decision!) Finished Node: tool (It searched Wikipedia!) Finished Node: agent (It's summarizing!)
+
+# It gives you feedback that progress is happening, even if the final answer isn't ready.
+def appInvoke(inputs, config):
+    final_state = app.invoke(inputs, config=config)
+    return final_state['messages'][-1].content
+
+def appStream(inputs, config):
+    for output in app.stream(inputs, config=config):
+        for key, value in output.items():
+            print(f"Finished Node: {key}")
+    return output['agent']['messages'][-1].content
+
+# 5. Run it
+def ask_wiki(user_input):
+    # We define a "thread_id". As long as this ID stays the same, 
+    # the bot remembers the conversation.
+    config = {"configurable": {"thread_id": "1"}}
+
+    # We pass the config to app.stream
+    # Note: I renamed the variable from 'input' to 'inputs' to avoid shadowing Python's built-in input() function
+    inputs = {"messages": [HumanMessage(content=user_input)]}
+
+    # Streaming the output
+    # output = appInvoke(inputs, config)
+    output = appStream(inputs, config)
+    print(f"> {output}")
+
+
+print(f"--- Starting Local Agent ({model}) ---")
+print("\nWhat may Wikipedia Help you with ? \n")
+while True:
+    try:
+        query = input("\n> ")
+        if query.lower() in ["quit", "exit"]:
+            break
+        ask_wiki(query)
+    except KeyboardInterrupt:
+        print('\nGoodbye!')
+        break

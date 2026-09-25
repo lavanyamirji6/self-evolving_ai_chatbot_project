@@ -1,0 +1,114 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #F5F5F7 0%, #E8E4F0 50%, #DCD6F0 100%);
+}
+
+.login-box {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 48px 40px;
+  border-radius: 18px;
+  box-shadow: 
+    0 20px 60px rgba(155, 127, 232, 0.15),
+    0 0 0 1px rgba(155, 127, 232, 0.1);
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.login-box h1 {
+  background: linear-gradient(135deg, #5B5B5F 0%, #3A3A3C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 12px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.login-box p {
+  color: #86868B;
+  margin-bottom: 36px;
+  font-size: 15px;
+}
+
+.login-box input {
+  width: 100%;
+  padding: 16px;
+  margin: 12px 0;
+  border: 1.5px solid #E8E8ED;
+  border-radius: 12px;
+  font-size: 16px;
+  background: #FAFAFC;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.login-box input:focus {
+  outline: none;
+  border-color: #B8A7E8;
+  box-shadow: 
+    0 0 0 4px rgba(184, 167, 232, 0.15),
+    0 8px 30px rgba(155, 127, 232, 0.2);
+  background: #FFFFFF;
+}
+
+.login-box button {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(
+    135deg, 
+    rgba(155, 127, 232, 0.95) 0%, 
+    rgba(184, 167, 232, 0.9) 50%, 
+    rgba(201, 184, 240, 0.85) 100%
+  );
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 8px 24px rgba(155, 127, 232, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.login-box button:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 32px rgba(155, 127, 232, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  background: linear-gradient(
+    135deg, 
+    rgba(155, 127, 232, 1) 0%, 
+    rgba(184, 167, 232, 0.95) 50%, 
+    rgba(201, 184, 240, 0.9) 100%
+  );
+}
+
+.error {
+  color: #FF6B6B;
+  background: rgba(255, 107, 107, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 14px;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.demo-credentials {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #E8E8ED;
+  color: #86868B;
+  font-size: 13px;
+  line-height: 1.6;
+}
